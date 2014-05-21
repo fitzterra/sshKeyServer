@@ -1,0 +1,8 @@
+# Any .sqlite database
+*.sqlite
+# All compiled python
+*.pyc
+# Everything in the src dir
+src/
+# All vim swap files
+.*.swp
