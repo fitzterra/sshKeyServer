@@ -10,7 +10,10 @@ from external.peewee import *
 # L{lib.database.initialize} should be added to this list.
 __all__ = ["database",
            # Models
-           "Domain", "Host", "User", "AuthorizedKeys"]
+           "Domain", "Host", "User", "AuthorizedKeys",
+           # Exception classes
+           "DoesNotExist", "IntegrityError"
+          ]
 
 class Domain(ModelBase):
     """
@@ -22,6 +25,18 @@ class Domain(ModelBase):
 
     #: Any optional user comments for this domain
     comment = TextField(null=True, default=None)
+
+    def addHost(self, hostname, comment=None):
+        """
+        Adds a L{Host} record linked to this domain.
+
+        @param hostname: The hostname to add.
+        @param comment: An optional comment for this host.
+
+        @return: The newly added L{Host} record.
+        """
+        return Host.create(domain=self, name=hostname, comment=comment)
+
 
 class Host(ModelBase):
     """
@@ -42,6 +57,19 @@ class Host(ModelBase):
         Returns the fully qualified name for the host and domain.
         """
         return "{0}.{1}".format(self.name, self.domain.name)
+
+    def addUser(self, username, pubKey, comment=None):
+        """
+        Adds a L{User} record linked to this host.
+
+        @param username: The username to add.
+        @param pubKey: The user's public key.
+        @param comment: An optional comment for this user.
+
+        @return: The newly added L{user} record.
+        """
+        return User.create(host=self, name=username, pubKey=pubKey,
+                           comment=comment)
 
 class User(ModelBase):
     """
@@ -65,6 +93,9 @@ class User(ModelBase):
         Returns the fully qualified user@host.domain.
         """
         return "{0}@{1}".format(self.name, self.host.fqn())
+
+    def __repr__(self):
+        return "{0} | {1} | {2}".format(self.fqn(), self.comment, self.pubKey)
 
 class AuthorizedKeys(ModelBase):
     """
