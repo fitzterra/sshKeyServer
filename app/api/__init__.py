@@ -5,11 +5,15 @@ The API service package.
 
 import textwrap
 import cherrypy
+import logging
 import appInfo
-from lib import componentConfig, logger, keyManagement
+from lib import componentConfig, keyManagement
 # This is needed here to make the auth tool checkpassword function get access to
 # the auth module
 from lib import auth
+
+# Set up the module logger
+logger = logging.getLogger(__name__)
 
 class API(object):
     """
@@ -52,7 +56,11 @@ class Key(object):
 
         @param uhd: The user@host.domain string for which to retrieve the key.
         """
-        res = keyManagement.addUserAndKey(uhd, key)
+        try:
+            res = keyManagement.addUserAndKey(uhd, key)
+        except ValueError, exc:
+            cherrypy.response.errorInfo = {'foo': 'bar', 'bar': 'baz'}
+            raise cherrypy.HTTPError(400, str(exc))
 
         return res._data
 

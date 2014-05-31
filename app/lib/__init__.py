@@ -4,6 +4,7 @@ Application library module
 """
 import os, errno
 import cherrypy
+from cherrypy._cpcompat import ntou, json_decode, json_encode
 import logging
 import appInfo
 
@@ -180,6 +181,68 @@ def configApp():
 
     # Get component configs into config
     conf = componentConfig('app', required=True)
+
+def json_processor(entity):
+    """
+    Read application/json data into the request arguments.
+
+    This is am almost identical copy of the CherryPy JSON tool's
+    json_processor() with the only difference that this version merges any json
+    data decoded from the body, into the request arguments instead of the
+    request.json object.
+
+    This makes JSON and normal form input data completely indistinguishable
+    fvrom each other as far as the request handlers go.
+    """
+    if not entity.headers.get(ntou("Content-Length"), ntou("")):
+        raise cherrypy.HTTPError(411)
+
+    body = entity.fp.read()
+    try:
+        cherrypy.serving.request.params.update(json_decode(body.decode('utf-8')))
+    except ValueError:
+        raise cherrypy.HTTPError(400, 'Invalid JSON document')
+
+def errorHandler(status, message, traceback, version):
+    """
+    Error handler for services.
+
+    This handler will format the error response in a suitable transmission
+    format (JSON/YAML/etc) based on what the client can handle.
+
+    In addition, if the cherrypy.response object contains an attribute called
+    B{errorInfo}, the value of this attribute will be added to the error
+    response dictionary with the key B{errorInfo}. This will allow the calling
+    process to include structured error information in an error response.
+    
+    @param status: The error status
+    @param message: Any custom messages passed in
+    @param traceback: If available
+    @param version: The cherrypy version
+
+    @see: U{http://cherrypy.readthedocs.org/en/latest/pkg/cherrypy.html?highlight=_cperror#module-cherrypy._cperror}
+    """
+    # The status and message data to return
+    dat = {'status': status, 'msg': message}
+    # The caller may have added the errorInfo attribute to the response object.
+    # If so, we add this as an additional error info key because this allows the
+    # caller to return structured error info that will also be returned in the
+    # marshalled output
+    try:
+        dat['errorInfo'] = cherrypy.response.errorInfo
+    except AttributeError:
+        # If it's not there, we just carry on
+        pass
+    # Only add the traceback if it is available
+    if traceback:
+        dat['tb'] = traceback
+    # Serialise the data
+    dat = json_encode(dat)
+    # and set the correct content type for the returned data
+    cherrypy.response.headers['Content-Type'] = 'application/json'
+    # Return the serialized data
+    return dat
+
 
 # Always run configApp when importing or using this file
 configApp()

@@ -4,7 +4,10 @@ Key management library.
 """
 
 import re
+import logging
 from lib import database as db
+
+logger = logging.getLogger(__name__)
 
 #: Regex to split 'user@host.domain.tld' string into it's components
 uhdSplitter = re.compile('^([^@]+)@([^.]+)\.(.*)$')
@@ -48,6 +51,11 @@ def addUserAndKey(uhd, pubKey, allowUpdate=False):
 
     @raises: Possibly various errors depending on reason for error.
     """
+    # Validate pubKey
+    # TODO: Need to find a better way to validate the key. Possibly using
+    #       formencode validation? For now we only test for None
+    if pubKey is None:
+        raise ValueError("No public key supplied.")
 
     # First split the uhd string
     res = splitUserHostDomain(uhd)
@@ -77,9 +85,11 @@ def addUserAndKey(uhd, pubKey, allowUpdate=False):
     # Now the user
     try:
         user = host.addUser(u, pubKey)
-    except db.IntegrityError:
+    except db.IntegrityError as exc:
         # It exists. Unless updates are allowed, we need to bail here
         if not allowUpdate:
+            logger.info("Error adding user/pubKey [{0}/{1}] for uhd: [{2}]. "
+                        "Error: {3}".format(u, pubKey, uhd, str(exc)))
             raise ValueError("Key updates to existing user [{0}] not "
                              "allowed.".format(uhd))
         # We may update the key, so get the user

@@ -23,15 +23,27 @@ _hosts_ and _domains_ , and also managing remote `./ssh/authorized_keys` files.
 ------------------------------------------------------------------------------
 
 ### Error Handling
-???? To be fleshed out ???
 
-Error structure:
+All HTTP errors will return details about the error as serialized object in the
+response body.
+
+The Error Structure in the body will have these key/values:
 
     {
-		'code': 400
-		'error': 'Invalid request'
-		'reason': 'Missing foo parameter'
+		'status': '400 Bad Request'
+		'msg': 'Duplicate username: foo'
+		'errorInfo': Optional additional error details. API dependant.
+		'tb': Traceback if CP global request.show_tracebacks is True
 	}
+
+------------------------------------------------------------------------------
+
+### Data Transmission Serialization
+All APIs return data in JSON format unless otherwise stated.
+All APIs supporting POST or PUT verbs, will allow the input data to be either
+standard POST/PUT key=value pairs, or a JSON data structure containing the input
+data.
+If passing JSON data, the `Content-Type: application/json` header should be set.
 
 ------------------------------------------------------------------------------
 
