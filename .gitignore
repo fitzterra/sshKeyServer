@@ -6,3 +6,7 @@
 src/
 # All vim swap files
 .*.swp
+# All site local configs
+app/etc/*.site.conf
+# The app/var dir and all it's contents. App startup should ensure it exists
+app/var

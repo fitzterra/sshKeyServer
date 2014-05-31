@@ -7,7 +7,9 @@ from external import peewee
 
 # Set up a defered SQLite database to be configured from the data
 # L{lib.database.setup} function later
-database = peewee.SqliteDatabase(None)
+#database = peewee.SqliteDatabase(None, check_same_thread=False, threadlocals=True)
+#database = peewee.SqliteDatabase('myDB.sqlite', check_same_thread=False)#, threadlocals=True)
+db_proxy = peewee.Proxy()
 
 class ModelBase(peewee.Model):
     """
@@ -17,5 +19,5 @@ class ModelBase(peewee.Model):
     used by all models.
     """
     class Meta:
-        database = database
+        database = db_proxy
 

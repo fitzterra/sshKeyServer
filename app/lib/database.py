@@ -4,6 +4,7 @@ Databse access library
 """
 
 from lib import conf, appDir
+from external import peewee
 from models import *
 
 def initialize(create=True, drop=False):
@@ -49,13 +50,17 @@ def setup(create=True):
     @param create: If True (the default), the L{initialize} function will be
            called to create any missing tables after connecting to the database.
     """
-
-    # NOTE: Until we have the config setup working the database name is
-    # hardcoded, and it is an SQLite db
+    # Get database connection params
+    dbBackend = conf['database']['backend']
     dbName = conf['database']['name'].format(appDir=appDir)
-
-    # Set up the connection using the 'database' instance imported from models
-    database.init(dbName)
+    # Set up database
+    if dbBackend == 'sqlite':
+        database = peewee.SqliteDatabase(dbName, check_same_thread=False)
+    else:
+        raise ValueError("Unsupported database backend: %s" % dbBackend)
+    # Replace the proxy database created for model definitions with the real
+    # database
+    db_proxy.initialize(database)
 
     if create:
         # Create while making sure not to drop anything.

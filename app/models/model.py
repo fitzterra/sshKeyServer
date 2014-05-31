@@ -3,12 +3,12 @@
 Defines the models for the app.
 """
 
-from _BaseModel import database, ModelBase
+from _BaseModel import db_proxy, ModelBase
 from external.peewee import *
 
 # NOTE: All models that need to be automatically managed by
 # L{lib.database.initialize} should be added to this list.
-__all__ = ["database",
+__all__ = ["db_proxy",
            # Models
            "Domain", "Host", "User", "AuthorizedKeys",
            # Exception classes
@@ -52,6 +52,12 @@ class Host(ModelBase):
     #: Any optional user comments for this host
     comment = TextField(null=True, default=None)
 
+    class Meta:
+        indexes = (
+            # The host should be unique within the domain
+            (('name', 'domain'), True),
+        )
+
     def fqn(self):
         """
         Returns the fully qualified name for the host and domain.
@@ -71,11 +77,11 @@ class Host(ModelBase):
         return User.create(host=self, name=username, pubKey=pubKey,
                            comment=comment)
 
+
 class User(ModelBase):
     """
     The users with accounts on L{Host}s.
     """
-
     #: The L{Host} FK fpr this user account
     host = ForeignKeyField(Host, related_name='users', on_delete='CASCADE')
     
@@ -88,6 +94,11 @@ class User(ModelBase):
     #: Any optional comments for this user
     comment = TextField(null=True, default=None)
 
+    class Meta:
+        indexes = (
+            # The user should be unique on the host
+            (('name', 'host'), True),
+        )
     def fqn(self):
         """
         Returns the fully qualified user@host.domain.
@@ -96,6 +107,7 @@ class User(ModelBase):
 
     def __repr__(self):
         return "{0} | {1} | {2}".format(self.fqn(), self.comment, self.pubKey)
+
 
 class AuthorizedKeys(ModelBase):
     """
