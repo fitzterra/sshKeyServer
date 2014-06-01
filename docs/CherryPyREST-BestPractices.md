@@ -6,9 +6,9 @@ REST server using CherryPy as the base.
 
 Other components that would normally be needed:
     * A Database
-	* An ORM for the database
-	* A system level configuration system
-	* A system level logging configuration
+    * An ORM for the database
+    * A system level configuration system
+    * A system level logging configuration
 
 ##Configuration
 CherryPy provides a flexible configuration system and splits configuration up
